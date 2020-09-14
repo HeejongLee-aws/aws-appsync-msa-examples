@@ -1,0 +1,12 @@
+{
+    "AppSyncApiName": "frontendsample1",
+    "DynamoDBBillingMode": "PAY_PER_REQUEST",
+    "DynamoDBEnableServerSideEncryption": false,
+    "AuthCognitoUserPoolId": {
+        "Fn::GetAtt": [
+            "authfrontendsample1e98c731d",
+            "Outputs.UserPoolId"
+        ]
+    },
+    "ArtistBackendServiceEndpoint": "https://ln2ppivtqzfbpez5qaup2lm5ge.appsync-api.ap-northeast-2.amazonaws.com"
+}

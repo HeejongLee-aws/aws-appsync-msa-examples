@@ -1,0 +1,191 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  backend-sample-1
+
+Resources:
+  # AppSync 
+  SampleGraphQLApi:
+    Type: 'AWS::AppSync::GraphQLApi'
+    Properties:
+      Name: "SampleAppsync"
+      AuthenticationType: "AMAZON_COGNITO_USER_POOLS"
+      UserPoolConfig:
+        UserPoolId: "ap-northeast-2_IhD6toaaY"
+        AwsRegion: !Ref 'AWS::Region'
+        DefaultAction: 'ALLOW'
+
+  SampleGrappQLSchema:
+    Type: AWS::AppSync::GraphQLSchema
+    Properties: 
+      ApiId: !GetAtt SampleGraphQLApi.ApiId
+      Definition: >
+        schema {
+          query: Query
+        }
+
+        type HelloWorld {
+          go: String
+          node: String
+          python: String
+          ruby: String
+        }
+
+        type Query {
+          getHelloWorld: HelloWorld
+        }
+
+  SampleLambdaIAMRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "appsync.amazonaws.com"
+      Policies:
+        - PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "*"
+                Effect: "Allow"
+                Resource:
+                  - !GetAtt SampleFunction.Arn
+          PolicyName: "SampleLambdaRole"
+
+  SampleLambdaDatasource:
+    Type: AWS::AppSync::DataSource
+    Properties: 
+      Name: SampleLambdaDataSource
+      ApiId: !GetAtt SampleGraphQLApi.ApiId
+      Description: test
+      Type: AWS_LAMBDA
+      ServiceRoleArn: !GetAtt SampleLambdaIAMRole.Arn
+      LambdaConfig: 
+        LambdaFunctionArn: !GetAtt SampleFunction.Arn
+          
+  SampleResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt SampleGraphQLApi.ApiId
+      TypeName: 'Query'
+      FieldName: 'getHelloWorld'
+      DataSourceName: !GetAtt SampleLambdaDatasource.Name
+
+  # Lambda
+  SampleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/app.lambdaHandler
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 100
+      Description: A simple example includes a HTTP get method to get one item by id from a DynamoDB table.
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SampleTable
+      Environment:
+        Variables:
+          SAMPLE_TABLE: !Ref SampleTable
+
+  # Dynamodb
+  SampleTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        -
+          AttributeName: "ArtistId"
+          AttributeType: "S"
+        -
+          AttributeName: "Concert"
+          AttributeType: "S"
+        -
+          AttributeName: "TicketSales"
+          AttributeType: "S"
+      KeySchema:
+        -
+          AttributeName: "ArtistId"
+          KeyType: "HASH"
+        -
+          AttributeName: "Concert"
+          KeyType: "RANGE"
+      GlobalSecondaryIndexes:
+        -
+          IndexName: "GSI"
+          KeySchema:
+            -
+              AttributeName: "TicketSales"
+              KeyType: "HASH"
+          Projection:
+            ProjectionType: "KEYS_ONLY"
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+  WriteCapacityScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: 15
+      MinCapacity: 5
+      ResourceId: !Join
+        - /
+        - - table
+          - !Ref SampleTable
+      RoleARN: !GetAtt ScalingRole.Arn
+      ScalableDimension: dynamodb:table:WriteCapacityUnits
+      ServiceNamespace: dynamodb
+  ScalingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - application-autoscaling.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        -
+          PolicyName: "root"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action:
+                  - "dynamodb:DescribeTable"
+                  - "dynamodb:UpdateTable"
+                  - "cloudwatch:PutMetricAlarm"
+                  - "cloudwatch:DescribeAlarms"
+                  - "cloudwatch:GetMetricStatistics"
+                  - "cloudwatch:SetAlarmState"
+                  - "cloudwatch:DeleteAlarms"
+                Resource: "*"
+  WriteScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: WriteAutoScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref WriteCapacityScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 50.0
+        ScaleInCooldown: 60
+        ScaleOutCooldown: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBWriteCapacityUtilization
+
+Outputs:
+  WebEndpoint:
+    Description: "AppSyncGraphQL endpoint URL for Prod stage"
+    Value: !GetAtt SampleGraphQLApi.GraphQLUrl

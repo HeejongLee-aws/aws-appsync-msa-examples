@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: this is sample..
+
+Resources:
+  SampleGraphQLApi:
+    Type: 'AWS::AppSync::GraphQLApi'
+    Properties:
+      Name: "SampleAppsync"
+      AuthenticationType: "AMAZON_COGNITO_USER_POOLS"
+      UserPoolConfig:
+        UserPoolId: "ap-northeast-2_IhD6toaaY"
+        AwsRegion: !Ref 'AWS::Region'
+        DefaultAction: 'ALLOW'
+
+  SampleGrappQLSchema:
+    Type: AWS::AppSync::GraphQLSchema
+    Properties: 
+      ApiId: !GetAtt SampleGraphQLApi.ApiId
+      Definition: >
+        schema {
+          query: Query
+        }
+
+        type HelloWorld {
+          go: String
+          node: String
+          python: String
+          ruby: String
+        }
+
+        type Query {
+          getHelloWorld: HelloWorld
+        }
+
+  lambdaIAMRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "appsync.amazonaws.com"
+      Policies:
+        - PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "*"
+                Effect: "Allow"
+                Resource:
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:function:*"
+          PolicyName: "lambda"
+
+  SampleLambdaDatasource:
+    Type: AWS::AppSync::DataSource
+    Properties: 
+      Name: test
+      ApiId: !GetAtt SampleGraphQLApi.ApiId
+      Description: test
+      Type: AWS_LAMBDA
+      ServiceRoleArn: !GetAtt lambdaIAMRole.Arn
+      LambdaConfig: 
+        LambdaFunctionArn: 'arn:aws:lambda:ap-northeast-2:074880891940:function:Stack-EmartCultureAuthent-EmartCultureAuthenticati-NJJHTT9LJ5D'
+          
+  SampleResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt SampleGraphQLApi.ApiId
+      TypeName: 'Query'
+      FieldName: 'getHelloWorld'
+      DataSourceName: !GetAtt SampleLambdaDatasource.Name

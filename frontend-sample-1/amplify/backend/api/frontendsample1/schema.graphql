@@ -1,0 +1,36 @@
+schema {
+	query: Query
+	mutation: Mutation
+}
+
+type Artist {
+	ArtistId: String
+	Concert: String
+	TicketSales: String
+}
+
+input Conditions {
+	ArtistId: String
+	Concert: String
+}
+
+input InputArtist {
+	ArtistId: String
+	Concert: String
+	TicketSales: String
+}
+
+type Mutation {
+	createArtist(input: InputArtist): Artist
+}
+
+type Query {
+	getArtist(input: Conditions): Artist
+	getConcertsByArtistId(input: Conditions): [Artist]
+}
+
+input param {
+	id: String
+	name: String
+}
+

@@ -1,0 +1,22 @@
+#set($payload = "query MyQuery {
+  getConcertsByArtistId(input: {ArtistId: ""$context.args.input.ArtistId""}) {
+    ArtistId
+    Concert
+    TicketSales
+  }
+}")
+
+{
+    "version": "2018-05-29",
+    "method": "POST",
+    "resourcePath": "/graphql",
+    "params":{
+        "body": {
+        	"query": "$util.escapeJavaScript($payload)"
+        },
+        "headers":{
+            "Content-Type": "application/json",
+            "x-access-token" : "$context.request.headers.x-access-token"
+        }
+    }
+}

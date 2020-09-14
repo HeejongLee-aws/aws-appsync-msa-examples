@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "type": "aws-sam",
+            "request": "direct-invoke",
+            "name": "backend-sample-1:SampleFunction",
+            "invokeTarget": {
+                "target": "template",
+                "templatePath": "template.yml",
+                "logicalId": "SampleFunction"
+            },
+            "lambda": {
+                "payload": {},
+                "environmentVariables": {}
+            }
+        }
+    ]
+}

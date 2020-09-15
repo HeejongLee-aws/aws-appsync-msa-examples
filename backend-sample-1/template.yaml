@@ -27,19 +27,40 @@ Resources:
     Properties: 
       ApiId: !GetAtt SampleGraphQLApi.ApiId
       Definition: >
-        schema {
-          query: Query
+        type Artist {
+          ArtistId: String
+          Concert: String
+          TicketSales: String
         }
 
-        type HelloWorld {
-          go: String
-          node: String
-          python: String
-          ruby: String
+        input Conditions {
+          ArtistId: String
+          Concert: String
+        }
+
+        input InputArtist {
+          ArtistId: String
+          Concert: String
+          TicketSales: String
+        }
+
+        type Mutation {
+          createArtist(input: InputArtist): Artist
         }
 
         type Query {
-          getHelloWorld: HelloWorld
+          getArtist(input: Conditions): Artist
+          getConcertsByArtistId(input: Conditions): [Artist]
+        }
+
+        input param {
+          id: String
+          name: String
+        }
+
+        schema {
+          query: Query
+          mutation: Mutation
         }
 
   SampleLambdaIAMRole:

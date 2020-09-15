@@ -5,13 +5,13 @@ Resources:
     Properties:
       AttributeDefinitions:
         -
-          AttributeName: "ID"
+          AttributeName: "ArtistId"
           AttributeType: "S"
         -ㄴ
-          AttributeName: "Task"
+          AttributeName: "Concert"
           AttributeType: "S"
         -
-          AttributeName: "Dscription"
+          AttributeName: "TicketSales"
           AttributeType: "S"
       KeySchema:
         -

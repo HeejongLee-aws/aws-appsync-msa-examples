@@ -23,7 +23,6 @@ async function getArtist(artistId, concert){
     Key: { "ArtistId": artistId , "Concert":concert},
   };
 
-  
   const data = await docClient.get(params).promise();
   const item = data.Item;
  

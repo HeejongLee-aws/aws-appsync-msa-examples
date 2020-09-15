@@ -2,18 +2,25 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: >-
   backend-sample-1
-
+  
+Parameters:
+  MasterSecretArn:
+    Description: Master Secret ARN
+    Type: String
+  MasterSecretsManagerKey:
+    Description: KMS Key for the use of secrets across accounts
+    Type: String
+  Stage:
+    Description: Environment
+    Type: String
+    
 Resources:
   # AppSync 
   SampleGraphQLApi:
     Type: 'AWS::AppSync::GraphQLApi'
     Properties:
       Name: "SampleAppsync"
-      AuthenticationType: "AMAZON_COGNITO_USER_POOLS"
-      UserPoolConfig:
-        UserPoolId: "ap-northeast-2_IhD6toaaY"
-        AwsRegion: !Ref 'AWS::Region'
-        DefaultAction: 'ALLOW'
+      AuthenticationType: "AWS_IAM"
 
   SampleGrappQLSchema:
     Type: AWS::AppSync::GraphQLSchema
@@ -81,7 +88,8 @@ Resources:
   SampleFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/app.lambdaHandler
+      Handler: app.lambdaHandler
+      CodeUri: backendsample/
       Runtime: nodejs12.x
       MemorySize: 128
       Timeout: 100
@@ -92,6 +100,9 @@ Resources:
       Environment:
         Variables:
           SAMPLE_TABLE: !Ref SampleTable
+          SECRET_ARN: !Ref MasterSecretArn
+          SECRET_MASTER: !Ref MasterSecretsManagerKey
+          STAGE: !Ref Stage
 
   # Dynamodb
   SampleTable:

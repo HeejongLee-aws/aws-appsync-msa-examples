@@ -97,12 +97,28 @@ Resources:
       LambdaConfig: 
         LambdaFunctionArn: !GetAtt SampleFunction.Arn
           
-  SampleResolver:
+  SampleResolver1:
     Type: AWS::AppSync::Resolver
     Properties:
       ApiId: !GetAtt SampleGraphQLApi.ApiId
       TypeName: 'Query'
-      FieldName: 'getHelloWorld'
+      FieldName: 'getConcertsByArtistId'
+      DataSourceName: !GetAtt SampleLambdaDatasource.Name
+      
+  SampleResolver2:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt SampleGraphQLApi.ApiId
+      TypeName: 'Query'
+      FieldName: 'getArtist'
+      DataSourceName: !GetAtt SampleLambdaDatasource.Name
+  
+  SampleResolver3:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt SampleGraphQLApi.ApiId
+      TypeName: 'Mutation'
+      FieldName: 'createArtist'
       DataSourceName: !GetAtt SampleLambdaDatasource.Name
 
   # Lambda
